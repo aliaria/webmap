@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Afghanistan Webmap</title>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <!-- Load Leaflet: http://leafletjs.com/ 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" integrity="sha512-M2wvCLH6DSRazYeZRIm1JnYyh22purTM+FDB5CsyxtQJYeKq83arPe5wgbNmcFXGqiSH2XR8dT/fJISVA1r/zQ==" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js" integrity="sha512-lInM/apFSqyy1o6s89K4iQUKg6ppXEgsVxT35HbzUupEVRh2Eu9Wdl4tHj7dZO0s1uvplcYGmt3498TtHq+log==" crossorigin=""></script> -->
+
+    <!-- Esri Leaflet Plugin: https://esri.github.io/esri-leaflet/ -->
+    <script src="https://unpkg.com/esri-leaflet@2.1.3/dist/esri-leaflet.js" integrity="sha512-pijLQd2FbV/7+Jwa86Mk3ACxnasfIMzJRrIlVQsuPKPCfUBCDMDUoLiBQRg7dAQY6D1rkmCcR8286hVTn/wlIg==" crossorigin=""></script>
+
+    <!-- ESRI Renderer Plugin: https://github.com/Esri/esri-leaflet-renderers -->
+    <!-- Renders feature layer using default symbology as defined by ArcGIS REST service -->
+    <!-- Currently doesn't work with ESRI cluster plugin -->
+    <script src="https://unpkg.com/esri-leaflet-renderers@2.0.6/dist/esri-leaflet-renderers.js" integrity="sha512-mhpdD3igvv7A/84hueuHzV0NIKFHmp2IvWnY5tIdtAHkHF36yySdstEVI11JZCmSY4TCvOkgEoW+zcV/rUfo0A==" crossorigin=""></script>
+
+    <!-- Load Leaflet Basemap Providers: https://github.com/leaflet-extras/leaflet-providers -->
+    <!-- Modified to include USGS TNM web services -->
+    <script src="JS/leaflet-providers.js"></script>
+
+    <!-- 2.5D OSM Buildings Classic: https://github.com/kekscom/osmbuildings -->
+    <script src="https://cdn.osmbuildings.org/OSMBuildings-Leaflet.js"></script>
+
+    <!-- Load Font Awesome icons -->
+    <script src="https://use.fontawesome.com/a64989e3a8.js"></script>
+
+    <!-- Grouped Layer Plugin: https://github.com/ismyrnow/leaflet-groupedlayercontrol  -->
+    <link rel="stylesheet" href="CSS/leaflet.groupedlayercontrol.min.css">
+    <script src="JS/leaflet.groupedlayercontrol.min.js" type="text/javascript"></script>
+
+    <!-- Overview mini map Plugin: https://github.com/Norkart/Leaflet-MiniMap -->
+    <link rel="stylesheet" href="CSS/Control.MiniMap.css">
+    <script src="JS/Control.MiniMap.min.js" type="text/javascript"></script>
+
+    <!-- Leaflet Drawing Plugin: https://github.com/codeofsumit/leaflet.pm -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.pm@latest/dist/leaflet.pm.css">
+    <script src="https://unpkg.com/leaflet.pm@latest/dist/leaflet.pm.min.js"></script>
+
+    <!-- Leaflet WMS Plugin: https://github.com/heigeo/leaflet.wms -->
+    <script src="JS/leaflet.wms.js"></script>
+
+    <!-- Logo Credit Plugin: https://github.com/gregallensworth/L.Control.Credits -->
+    <link rel="stylesheet" href="CSS/leaflet-control-credits.css" />
+    <script type="text/javascript" src="JS/leaflet-control-credits.js"></script>
+    <!--Open Layer inpout-->
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/build/ol.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css">
+
+    <!--Fetch input-->
+    <script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@2.0.4/fetch.js"></script>
+
+
+    <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script> 
+    <script src='leaflet-ajax.js'></script>
+
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        html,
+        body,
+        #map {
+            height: 100%;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div id="map"></div>
+    //Afghanistan Admin Data
+    <script src= "./lib/Afghanistan_Border.js"></script>
+    <script src= "./lib/Afghanistan_District.js"></script>
+    <script src= "./lib/Afghanistan_Province.js"></script>
+    <script src= "./lib/Afghanistan_Regions.js"></script>
+    <script src= "./lib/AfghanistanCityPoint.js"></script>
+    
+    //Afghanistan power data
+    <script src= "./Data/AEPP.js"></script>
+    <script src= "./Data/AES.js"></script>
+    <script src= "./Data/AETN.js"></script>
+    <script src= "./Data/AFPP.js"></script>
+    <script src= "./Data/AFS.js"></script>
+    <script src= "./Data/AFTN.js"></script>
+    <script src= "./Data/ASSHP.js"></script>
+
+    //Afghanistan Wather Body
+    <script src= "./lib/River.js"></script>
+    <script src = "./lib/Afg_lake.js"></script>
+    
+
+    <script>
+        var map = L.map('map', {
+            center: [34.01, 68.1], // Afghanistan
+            zoom: 6
+        });
+
+        var defaultBase = L.tileLayer.provider('OSMTOPO').addTo(map);
+
+        var baseLayers = {
+            'OSM TNM': defaultBase,
+            'OSM Topo': L.tileLayer.provider('OpenTopoMap'),
+            'Stamen Toner': L.tileLayer.provider('Stamen.TonerLite'),
+            'ESRI Imagery': L.tileLayer.provider('Esri.WorldImagery'),
+            'ESRI Topo Basemap': L.tileLayer.provider('Esri.WorldTopoMap'),
+            'ESRI World Street Map': L.tileLayer.provider('Esri.WorldStreetMap'),
+            'Hike Bike': L.tileLayer.provider('HikeBike')
+        };
+
+        //ESRI ArcGIS layers from Hawaii GIS Program; dynamic layer example
+        //Using Geojson 
+
+        var Afg_Border =L.geoJSON(afg1, {
+            style: function(feature){
+                return{
+                    color: '#105050',
+                    weight: 0.5
+                }
+            }
+        })
+
+        //Afghanistan UN Border
+
+        var Afg_UN =L.geoJSON(afg2, {
+            style: function(feature){
+                return{
+                    color: '#501050',
+                    weight: 0.5
+                }
+            }
+        })
+
+        //Afghanistan Province border
+
+        var Afg_Provice =L.geoJSON(afg3, {
+            style: function(feature){
+                return{
+                    color: '#505010',
+                    weight: 0.5
+                }
+            }
+            }).bindPopup(function (Afg_Provice) {
+                return ('Provice Name: '+Afg_Provice.feature.properties.Province+'<p> District Name: '+Afg_Provice.feature.properties.Capital+'</p>')
+        })
+        
+
+        //Afghanistan sub provice regions
+        
+        var Afg_SP =L.geoJSON(afg4, {
+            style: function(feature){
+                return{
+                    color: '#501010',
+                    weight: 0.5
+                }
+            }
+            }).bindPopup(function (Afg_SP){
+                return ('Provice Name: '+Afg_SP.feature.properties.PROV_34_NA+'<p> District Name: '+Afg_SP.feature.properties.DIST_34_NA+'</p>')
+            })
+    
+
+
+        //load Geojson from file and it is a City Points.
+
+        var city_point = L.geoJson(citypoint, {
+            style: function(feature){
+                return{
+                    color: '#000099',
+                    weight: 0.5
+                }
+            },
+            onEachFeature: function (feature, city_point) {
+            city_point.bindPopup('Province Name: '+city_point.feature.properties.ADMIN_NAME+'<p> Capital Name: '+city_point.feature.properties.CITY_NAME+'</p>');
+            }
+        })
+        
+
+        //Afghanistan Exist Power Plants
+        var Style1 = {
+            radius: 4,
+            fillColor: "#009000",
+            color: "#303030",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+        };
+
+        var Afg_AEPP = L.geoJson(AEPP, {
+            pointToLayer : function (feature, latlng) {
+                return L.circleMarker(latlng, Style1);
+            },
+            onEachFeature: function (feature, Afg_AEPP) {
+            Afg_AEPP.bindPopup('Area Name: '+Afg_AEPP.feature.properties.Name+'<p> Type: '+Afg_AEPP.feature.properties.Type+'</p>'+'<p> Capacity (M): '+Afg_AEPP.feature.properties.Capacity_M+'</p>');
+            }
+        })
+
+        //Afghanistan Future Power Plants
+        var Style2 = {
+            radius: 4,
+            fillColor: "#ffee00",
+            color: "#000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+        };
+
+        var Afg_AFPP = L.geoJson(AFPP, {
+            pointToLayer : function (feature, latlng) {
+                return L.circleMarker(latlng, Style2);
+            },
+            onEachFeature: function (feature, Afg_AFPP) {
+            Afg_AFPP.bindPopup('Area Name: '+Afg_AFPP.feature.properties.Name+'<p> Type: '+Afg_AFPP.feature.properties.Type+'</p>'+'<p> Capacity (M): '+Afg_AFPP.feature.properties.Capacity_M+'</p>');
+            }
+        })
+
+        
+        //Icon class diffined
+        var LeafIcon = L.Icon.extend({
+            options: {
+                iconSize:     [25, 25],
+                iconAnchor:   [10, 10],
+                popupAnchor:  [0, -5]
+            }
+        });
+
+        var Icon1 = new LeafIcon({iconUrl: './Images/trans_icon1.png'}),
+            Icon2 = new LeafIcon({iconUrl: './Images/trans_icon2.png'}),
+            Icon3 = new LeafIcon({iconUrl: './Images/hydro_dam.png'});
+
+        //Afghanistan Exist Substation
+        var Afg_AES = L.geoJson(AES, {
+            pointToLayer : function(feature, latlng) {
+                return L.marker(latlng, {
+                    icon: Icon1
+                })
+            },
+            onEachFeature: function (feature, Afg_AES) {
+            Afg_AES.bindPopup('Capacity (k): '+Afg_AES.feature.properties.Capacity_k);
+            }
+        })
+
+        //Afghanistan Future Substation
+        var Afg_AFS = L.geoJson(AFS, {
+            pointToLayer : function(feature, latlng) {
+                return L.marker(latlng, {
+                    icon: Icon2
+                })
+            },
+            onEachFeature: function (feature, Afg_AFS) {
+            Afg_AFS.bindPopup('Capacity (k): '+Afg_AFS.feature.properties.Capacity_k);
+            }
+        })
+
+        //Afghanistan Exist Transmission Network
+        var Afg_AETN = L.geoJson(AETN, {
+            style: function(feature){
+                return{
+                    color: '#901040',
+                    weight: 1.4
+                }
+            }
+        })
+
+        //Afghanistan Future Transmission Network
+        var Afg_AFTN = L.geoJson(AFTN, {
+            style: function(feature){
+                return{
+                    color: '#109060',
+                    weight: 1.4
+                }
+            }
+        })
+
+        //Afghanistan Smal Scale Hydropower potential
+        var Afg_ASSHP = L.geoJson(ASSHP, {
+            pointToLayer : function(feature, latlng) {
+                return L.marker(latlng, {
+                    icon: Icon3
+                })
+            }
+        })
+
+
+        // Wather body Data
+        //load Geojson from file and it is a River file
+        var Afg_river = L.geoJson(afgriver, {
+            style: function(feature){
+                return{
+                    color: '#0000E0',
+                    weight: 1.0
+                }
+            }
+        })
+
+        //load Geojson from file and it is a Lake file
+        var Afg_lake = L.geoJson(lake, {
+            style: function(feature){
+                return{
+                    color: '#0000E0',
+                    weight: 1.0
+                }
+            }
+        })
+
+
+
+
+
+        //ESRI ArcGIS layers from Hawaii GIS Program; polygon feature layer example
+        //Using a relative url to call layer instead of http
+        var AgBaseline = L.esri.featureLayer({
+            url: '//geodata.hawaii.gov/arcgis/rest/services/LandUseLandCover/MapServer/4',
+            style: function(feature) {
+                return {
+                    fillOpacity: 0.5
+                }
+            }
+        });
+
+        //add popup to AgBaseline feature layer
+        AgBaseline.bindPopup(function(evt) {
+            return L.Util.template('<p>{cropcatego}<br>{island}</p>', evt.feature.properties);
+        });
+
+        //ESRI ArcGIS layers from Hawaii GIS Program; line feature layer example; can override the styling
+        //Using a relative url to call layer
+        var Trails = L.esri.featureLayer({
+            url: '//geodata.hawaii.gov/arcgis/rest/services/Terrestrial/MapServer/34',
+            style: function(feature) {
+                return {
+                    color: '#328000',
+                    weight: 2
+                }
+            }
+        });
+
+        //PacIOOS GeoServer Example; adding a single layer with properties
+        //Using a relative url to call layer instead of http
+        var EconSeaLevRise = L.tileLayer.wms('http://geo.pacioos.hawaii.edu/geoserver/wms?', {
+            layers: 'PACIOOS:hi_tt_all_slrxa_econ_2030',
+            format: 'image/png',
+            opacity: 0.5,
+            tiled: 'true'
+        });
+
+        //Another example using PacIOOS GeoServer examples; setting properties first then add layers     
+        var options = {
+            transparent: 'true',
+            format: 'image/png',
+            opacity: 0.5,
+            tiled: 'true'
+            //info_format: 'text/html'
+        };
+
+        //Using a relative url to call layer instead of http
+        var source = L.WMS.source('http://geo.pacioos.hawaii.edu/geoserver/wms?', options);
+        var CREDREASites = source.getLayer('PACIOOS:hi_cred_all_rea_sites');
+        var VegShoreline = source.getLayer('PACIOOS:hi_hcgg_all_shore_veg');
+
+        //Load OSM Buildings then disable it on first load; can only be viewed at certain scales
+        var osmb = new OSMBuildings(map).load();
+        map.removeLayer(osmb);
+
+        //Overlay grouped layers    
+        var groupOverLays = {
+            "Afghanistan Admin Borders": {
+                "Afghanistan Border": Afg_Border,
+                "Afghanistan 8 Regions": Afg_UN,
+                "Afghanistan Province": Afg_Provice,
+                "Afghanistan Sub_Provice Regions": Afg_SP,
+                "Afghanistan City Point": city_point
+                
+            },
+
+            "Afghanistan Power Plants": {
+                "Afghanistan Exist power plants ": Afg_AEPP,
+                "Afghanistan Future power plants ": Afg_AFPP,
+                "Afghanistan Exist Substation ": Afg_AES,
+                "Afghanistan Future Substation ": Afg_AFS,
+                "Afghanistan Exist Transmission Network ": Afg_AETN,
+                "Afghanistan Future Transmission Network ": Afg_AFTN,
+                "Afghanistan Smal Scale Hydropower Potential ": Afg_ASSHP
+            },
+
+            "Afghanistan Water Body": {
+                "Afghanistan River": Afg_river,
+                "Afghanistan Lake": Afg_lake
+            }
+        };
+
+        //add layer switch control
+        L.control.groupedLayers(baseLayers, groupOverLays).addTo(map);
+
+
+        //add scale bar to map
+        L.control.scale({
+            position: 'bottomleft'
+        }).addTo(map);
+
+        // Overview mini map
+        var Esri_WorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+
+        var miniMap = new L.Control.MiniMap(Esri_WorldImagery, {
+            toggleDisplay: true,
+            minimized: false,
+            position: 'bottomleft'
+        }).addTo(map);
+
+        //define Drawing toolbar options
+        var options = {
+            position: 'topleft', // toolbar position, options are 'topleft', 'topright', 'bottomleft', 'bottomright'
+            drawMarker: true, // adds button to draw markers
+            drawCircleMarker: true, //
+            drawPolyline: true, // adds button to draw a polyline
+            drawRectangle: true, // adds button to draw a rectangle
+            drawPolygon: true, // adds button to draw a polygon
+            drawCircle: true, // adds button to draw a cricle
+            cutPolygon: true, // adds button to cut a hole in a polygon
+            editMode: true, // adds button to toggle edit mode for all layers
+            removalMode: true, // adds a button to remove layers
+            drawControls: true, //shows all draw buttons / buttons in the draw block
+            editControls: true, //shows all edit buttons / buttons in the edit block
+            optionsControls: true, //
+        };
+
+        // add leaflet.pm controls to the map
+        map.pm.addControls(options);
+
+        //Logo position: bottomright
+        var credctrl = L.controlCredits({
+            image: "./Images/GMS.png",
+            link: "https://www.gms.af/",
+            text: "Leaflet Webmap by info@<u>gms.af<u/>"
+        }).addTo(map);
+
+    </script>
+
+</body>
+
+</html>
